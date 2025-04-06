@@ -7,8 +7,9 @@ type Character struct {
 	Name       string
 	Level      int
 	Class      string
-	Specie     string
+	Specie     Specie
 	Initiative int
 	Speed      int
 	HP         int
+	Attributes Attribute
 }

@@ -11,7 +11,6 @@ import (
 func CreateCharacterHandler(ctx *gin.Context) {
 	var character *request.CharacterRequest
 
-	logger.Infof("Create character %v", character)
 	if err := ctx.BindJSON(&character); err != nil {
 		logger.Errorf("Error binding JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -35,7 +34,7 @@ func CreateCharacterHandler(ctx *gin.Context) {
 }
 
 func GetCharacterHandler(ctx *gin.Context) {
-	id := parseUUIDFromQueryParam(ctx)
+	id := parseUUIDFromRequestParam(ctx)
 
 	character, err := request.GetCharacter(id)
 	if err != nil {
@@ -51,7 +50,7 @@ func GetCharacterHandler(ctx *gin.Context) {
 }
 
 func UpdateCharacterHandler(ctx *gin.Context) {
-	id := parseUUIDFromQueryParam(ctx)
+	id := parseUUIDFromRequestParam(ctx)
 
 	var character *request.CharacterRequest
 	if err := ctx.BindJSON(&character); err != nil {
@@ -77,7 +76,7 @@ func UpdateCharacterHandler(ctx *gin.Context) {
 }
 
 func DeleteCharacterHandler(ctx *gin.Context) {
-	id := parseUUIDFromQueryParam(ctx)
+	id := parseUUIDFromRequestParam(ctx)
 	rowsAffected, err := request.DeleteCharacter(id)
 	if err != nil {
 		logger.Error(err)
@@ -114,8 +113,8 @@ func ListCharactersHandler(ctx *gin.Context) {
 	})
 }
 
-func parseUUIDFromQueryParam(ctx *gin.Context) uuid.UUID {
-	stringId := ctx.Query("id")
+func parseUUIDFromRequestParam(ctx *gin.Context) uuid.UUID {
+	stringId := ctx.Param("id")
 	if stringId == "" {
 		logger.Errorf("Query param id is required")
 		ctx.JSON(http.StatusBadRequest, gin.H{

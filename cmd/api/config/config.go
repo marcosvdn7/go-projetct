@@ -19,7 +19,12 @@ const (
 )
 
 func Init() {
+	logger = newLogger("config")
 	initializeDB()
+}
+
+func GetLogger(p string) *Logger {
+	return newLogger(p)
 }
 
 func initializeDB() {
@@ -33,11 +38,6 @@ func initializeDB() {
 	}
 }
 
-func GetLogger(prefix string) *Logger {
-	logger = newLogger(prefix)
-	return logger
-}
-
 func GetDB() *sql.DB {
 	return db
 }
@@ -47,7 +47,7 @@ func initializeDocker() {
 	cmd.Dir = "C:\\git\\go-projetct\\"
 	err := cmd.Run()
 	if err != nil {
-		logger.Errorf("Error starting docker db: %v", err)
+		logger.Errorf("Error starting docker db: %v", err.Error())
 		panic(err)
 	}
 }

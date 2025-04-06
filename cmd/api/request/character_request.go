@@ -1,6 +1,7 @@
 package request
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/marcosvdn7/go-projetct/cmd/api/database"
@@ -8,24 +9,32 @@ import (
 )
 
 type CharacterRequest struct {
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	Level      *int   `json:"level"`
-	Specie     string `json:"specie"`
-	Initiative *int   `json:"initiative"`
-	Speed      *int   `json:"speed"`
-	HP         *int   `json:"hp"`
+	Name       string         `json:"name"`
+	Class      string         `json:"class"`
+	Level      *int           `json:"level"`
+	Specie     *SpecieRequest `json:"specie"`
+	Initiative *int           `json:"initiative"`
+	Speed      *int           `json:"speed"`
+	HP         *int           `json:"hp"`
 }
 
 type CharacterResponse struct {
-	Id         uuid.UUID `json:"id"`
-	Name       string    `json:"name"`
-	Class      string    `json:"class"`
-	Level      int       `json:"level"`
-	Specie     string    `json:"specie"`
-	Initiative int       `json:"initiative"`
-	Speed      int       `json:"speed"`
-	HP         int       `json:"hp"`
+	Id         uuid.UUID       `json:"id"`
+	Name       string          `json:"name"`
+	Class      string          `json:"class"`
+	Level      int             `json:"level"`
+	Specie     *SpecieResponse `json:"specie,omitempty"`
+	Initiative int             `json:"initiative"`
+	Speed      int             `json:"speed"`
+	HP         int             `json:"hp"`
+}
+
+type SpecieRequest struct {
+	Id uuid.UUID `json:"id"`
+}
+
+type SpecieResponse struct {
+	Name string `json:"name,omitempty"`
 }
 
 func CreateCharacter(character *CharacterRequest) (c *CharacterResponse, err error) {
@@ -33,13 +42,19 @@ func CreateCharacter(character *CharacterRequest) (c *CharacterResponse, err err
 		return nil, err
 	}
 
-	characterToPersist := mapRequestToModel(character)
+	characterToPersist, err := mapRequestToModel(character)
+	if err != nil {
+		return nil, err
+	}
 
 	if err = database.SaveCharacter(characterToPersist); err != nil {
 		return nil, err
 	}
 
-	response := mapModelToResponse(characterToPersist)
+	response, err := mapModelToResponse(characterToPersist)
+	if err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -49,9 +64,12 @@ func GetCharacter(id uuid.UUID) (c *CharacterResponse, err error) {
 	if err != nil {
 		return nil, err
 	}
-	response := mapModelToResponse(character)
+	response, err := mapModelToResponse(character)
+	if err != nil {
+		return nil, err
+	}
 
-	return response, err
+	return response, nil
 }
 
 func UpdateCharacter(id uuid.UUID, character *CharacterRequest) (c *CharacterResponse, err error) {
@@ -67,7 +85,10 @@ func UpdateCharacter(id uuid.UUID, character *CharacterRequest) (c *CharacterRes
 		return nil, err
 	}
 
-	response := mapModelToResponse(persistedCharacter)
+	response, err := mapModelToResponse(persistedCharacter)
+	if err != nil {
+		return nil, err
+	}
 
 	return response, nil
 }
@@ -83,7 +104,10 @@ func ListCharacters() (characters []*CharacterResponse, err error) {
 	}
 
 	for _, res := range result {
-		character := mapModelToResponse(res)
+		character, err := mapModelToResponse(res)
+		if err != nil {
+			return nil, err
+		}
 		characters = append(characters, character)
 	}
 
@@ -107,7 +131,7 @@ func validateRequiredFields(c *CharacterRequest) error {
 	if c.Class == "" {
 		return errors.New("class is required")
 	}
-	if c.Specie == "" {
+	if c.Specie == nil {
 		return errors.New("specie is required")
 	}
 	if c.Initiative == nil {
@@ -127,51 +151,52 @@ func validateRequiredFields(c *CharacterRequest) error {
 	return nil
 }
 
-func mapRequestToModel(c *CharacterRequest) *model.Character {
-	return &model.Character{
-		Name:       c.Name,
-		Class:      c.Class,
-		Specie:     c.Specie,
-		Level:      *c.Level,
-		Initiative: *c.Initiative,
-		Speed:      *c.Speed,
-		HP:         *c.HP,
+func mapRequestToModel(c *CharacterRequest) (modelCharacter *model.Character, err error) {
+	jsonData, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
 	}
+	err = json.Unmarshal(jsonData, &modelCharacter)
+	if err != nil {
+		return nil, err
+	}
+
+	return modelCharacter, nil
 }
 
-func mapModelToResponse(character *model.Character) *CharacterResponse {
-	return &CharacterResponse{
-		Id:         character.Id,
-		Name:       character.Name,
-		Class:      character.Class,
-		Level:      character.Level,
-		Specie:     character.Specie,
-		Initiative: character.Initiative,
-		Speed:      character.Speed,
-		HP:         character.HP,
+func mapModelToResponse(character *model.Character) (characterResponse *CharacterResponse, err error) {
+	jsonData, err := json.Marshal(character)
+	if err != nil {
+		return nil, err
 	}
+	err = json.Unmarshal(jsonData, &characterResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return characterResponse, nil
 }
 
 func mapFieldsToUpdate(persisted *model.Character, updated *CharacterRequest) {
-	if updated.Name != "" {
+	if updated.Name != "" && updated.Name != persisted.Name {
 		persisted.Name = updated.Name
 	}
-	if updated.Class != "" {
+	if updated.Class != "" && updated.Class != persisted.Class {
 		persisted.Class = updated.Class
 	}
-	if updated.Specie != "" {
-		persisted.Specie = updated.Specie
+	if updated.Specie != nil {
+		persisted.Specie.Id = updated.Specie.Id
 	}
-	if updated.Level != nil {
+	if updated.Level != nil && *updated.Level != persisted.Level {
 		persisted.Level = *updated.Level
 	}
-	if updated.Initiative != nil {
+	if updated.Initiative != nil && *updated.Initiative != persisted.Initiative {
 		persisted.Initiative = *updated.Initiative
 	}
-	if updated.Speed != nil {
+	if updated.Speed != nil && *updated.Speed != persisted.Speed {
 		persisted.Speed = *updated.Speed
 	}
-	if updated.HP != nil {
+	if updated.HP != nil && *updated.HP != persisted.HP {
 		persisted.HP = *updated.HP
 	}
 }

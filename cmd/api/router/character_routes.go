@@ -7,10 +7,10 @@ import (
 
 func InitializeCharacterRoutes(routerGroup *gin.RouterGroup) {
 	{
-		routerGroup.POST("/character", handler.CreateCharacterHandler)
-		routerGroup.GET("/character", handler.GetCharacterHandler)
-		routerGroup.PUT("/character/", handler.UpdateCharacterHandler)
-		routerGroup.DELETE("/character", handler.DeleteCharacterHandler)
+		routerGroup.POST("/character/", handler.CreateCharacterHandler)
+		routerGroup.GET("/character/:id", handler.GetCharacterHandler)
+		routerGroup.PUT("/character/:id", handler.UpdateCharacterHandler)
+		routerGroup.DELETE("/character/:id", handler.DeleteCharacterHandler)
 		routerGroup.GET("/characters", handler.ListCharactersHandler)
 	}
 }
