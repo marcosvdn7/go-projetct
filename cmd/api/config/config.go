@@ -2,8 +2,7 @@ package config
 
 import (
 	"database/sql"
-	"errors"
-	"github.com/marcosvdn7/go-projetct/cmd/api/router"
+	"os/exec"
 )
 
 var (
@@ -19,23 +18,36 @@ const (
 	dbname   = "postgres"
 )
 
+func Init() {
+	initializeDB()
+}
+
+func initializeDB() {
+	initializeDocker()
+
+	var err error
+	db, err = initDBConnection()
+	if err != nil {
+		logger.Errorf("Error connecting to database: %v", err)
+		panic(err)
+	}
+}
+
 func GetLogger(prefix string) *Logger {
 	logger = newLogger(prefix)
 	return logger
 }
 
-func InitializeDB() (db *sql.DB, err error) {
-	db, err = initDBConnection()
-	if err != nil {
-		return nil, errors.New("Error connecting to database: " + err.Error())
-	}
-
-	return db, nil
+func GetDB() *sql.DB {
+	return db
 }
 
-func InitializeServer() {
-	if err := router.InitializeRouter(); err != nil {
-		logger.Errorf("Error initializing routes %v", err)
+func initializeDocker() {
+	cmd := exec.Command("docker", "compose", "up", "-d", "go-project")
+	cmd.Dir = "C:\\git\\go-projetct\\"
+	err := cmd.Run()
+	if err != nil {
+		logger.Errorf("Error starting docker db: %v", err)
 		panic(err)
 	}
 }

@@ -1,8 +1,12 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/marcosvdn7/go-projetct/cmd/api/config"
+)
 
-func InitializeRouter() error {
+func InitializeRouter() {
+	logger := config.GetLogger("router")
 	router := gin.Default()
 	routerGroup := router.Group("go-project/api")
 
@@ -12,7 +16,10 @@ func InitializeRouter() error {
 		})
 	})
 
-	initializeSheetRoutes(routerGroup)
+	InitializeCharacterRoutes(routerGroup)
 
-	return router.Run(":8080")
+	if err := router.Run("0.0.0.0:8080"); err != nil {
+		logger.Errorf("Failed to initiate server: %v", err)
+		panic(err)
+	}
 }

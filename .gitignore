@@ -1,0 +1,31 @@
+# Binaries
+
+*.exe
+*.dll
+*.so
+*.dyLib
+
+# Test Binary
+
+*.test
+
+# Coverage
+
+*.out
+
+# Logs
+
+*.log
+*.txt
+
+# HTTP Request
+
+*.http
+
+# Temporary
+
+.tmp/
+
+# IDE
+
+.idea/
